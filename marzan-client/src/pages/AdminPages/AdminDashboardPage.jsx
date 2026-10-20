@@ -47,6 +47,9 @@ const AdminDashboardPage = () => {
           <h1 className="mt-2 text-2xl font-bold text-slate-900">Welcome back, {displayName(admin)}</h1>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Link to="/admin/analytics" className={`${linkButtonClasses} bg-slate-100 text-slate-900 hover:bg-slate-200`}>
+            View Analytics
+          </Link>
           <Link to="/admin/orders" className={`${linkButtonClasses} bg-slate-100 text-slate-900 hover:bg-slate-200`}>
             Manage Orders
           </Link>

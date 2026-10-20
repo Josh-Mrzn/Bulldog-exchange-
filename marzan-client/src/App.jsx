@@ -98,6 +98,11 @@ const routes = [
         element: <AdminOrdersPage />,
       },
       {
+        // Loaded on demand so the chart library is not part of every page's download.
+        path: 'analytics',
+        lazy: () => import('./pages/AdminPages/AdminAnalyticsPage').then((module) => ({ Component: module.default })),
+      },
+      {
         path: 'profile',
         element: <ProfilePage />,
       },

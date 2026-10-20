@@ -233,6 +233,11 @@ Requires `marzan-server` running and `marzan-client/.env`'s `VITE_API_URL` point
 
 - `/admin/dashboard` — live counts (products, categories, users, orders and sales), recent orders,
   and products that still have no photo.
+- `/admin/analytics` — sales analytics for a chosen period (7/30/90 days or all time): total sales,
+  orders, average order, items sold, a sales-over-time chart, sales by category (donut), orders by
+  status, best-selling products, and the full sales history with a status filter. Built from the
+  existing `GET /api/v1/orders` and `GET /api/v1/products` (no backend changes) with Recharts;
+  cancelled orders are excluded from sales.
 - `/admin/orders` — every order with its items and shipping address; the Admin confirms it
   (Pending → Processing), marks it Shipped and Delivered, marks it Paid, or cancels it. The
   customer sees the new status on My Orders.
