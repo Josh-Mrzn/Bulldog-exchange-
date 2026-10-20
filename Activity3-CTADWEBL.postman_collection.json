@@ -1,0 +1,2717 @@
+{
+  "info": {
+    "_postman_id": "ad7d3b5c-dc4d-4739-93dd-e5d4c378176f",
+    "name": "Activity3-CTADWEBL",
+    "description": "Laboratory Activity 3 (RESTful API Design Standards) - tests for every /api/v1 endpoint of the BulldogEx Shop API.\n\n1. Start the server first: npm run dev (inside marzan-server).\n2. Send the requests from top to bottom. Saved values (token, userId, categoryId, supplierId, hoodieId, ...) are stored in the collection variables, so do not skip requests.\n3. Requests marked [Validation] are supposed to fail; their tests pass when the API returns the expected error status.\n\nFolder 8 deletes the temporary category, supplier, and product created by this collection.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "0. Check API",
+      "item": [
+        {
+          "name": "0.1 API status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": []
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Users and Sessions",
+      "item": [
+        {
+          "name": "1.1 Sign up Carlo Mendoza",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"201 Created\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Password is not returned\", () => { pm.expect(pm.response.json().data).to.not.have.property(\"password\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Carlo\",\n  \"lastName\": \"Mendoza\",\n  \"email\": \"carlo.mendoza@nu.edu.ph\",\n  \"password\": \"pass123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "1.2 [Validation] Email already registered",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"409 Conflict\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Standard JSON format (success: false)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Error message mentions: Email already registered\", () => pm.expect(pm.response.json().message).to.include(\"Email already registered\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Carlo\",\n  \"lastName\": \"Mendoza\",\n  \"email\": \"carlo.mendoza@nu.edu.ph\",\n  \"password\": \"pass123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "1.3 Sign in as Carlo (saves token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "if (pm.response.code === 200) pm.collectionVariables.set(\"token\", pm.response.json().data.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sessions"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"carlo.mendoza@nu.edu.ph\",\n  \"password\": \"pass123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "1.4 [Validation] Wrong password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"401 Unauthorized\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"Standard JSON format (success: false)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Error message mentions: Invalid email or password\", () => pm.expect(pm.response.json().message).to.include(\"Invalid email or password\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sessions"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"carlo.mendoza@nu.edu.ph\",\n  \"password\": \"wrong-password\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "1.5 Get my profile (saves userId)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Profile has no password\", () => { pm.expect(pm.response.json().data).to.not.have.property(\"password\"); });",
+                  "if (pm.response.code === 200) pm.collectionVariables.set(\"userId\", pm.response.json().data._id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "1.6 [Validation] Profile without a token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"401 Unauthorized\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"Standard JSON format (success: false)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Error message mentions: No token provided\", () => pm.expect(pm.response.json().message).to.include(\"No token provided\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Categories",
+      "item": [
+        {
+          "name": "2.1 Get all categories",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"count matches the number of items\", () => { const b = pm.response.json(); pm.expect(b.count).to.eql(b.data.length); pm.expect(b.count).to.be.above(0); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "categories"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "2.2 Create category Snacks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"201 Created\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "if (pm.response.code === 201) pm.collectionVariables.set(\"categoryId\", pm.response.json().data._id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "categories"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Snacks\",\n  \"description\": \"Quick bites and drinks for busy class days.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "2.3 Get category by id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Category is Snacks\", () => { pm.expect(pm.response.json().data.name).to.eql(\"Snacks\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories/{{categoryId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "categories",
+                "{{categoryId}}"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "2.4 Update category",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Description is updated\", () => { pm.expect(pm.response.json().data.description).to.eql(\"Snacks and drinks for study breaks.\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories/{{categoryId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "categories",
+                "{{categoryId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Snacks and drinks for study breaks.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "2.5 [Validation] Duplicate category name",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"409 Conflict\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Standard JSON format (success: false)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Error message mentions: already exists\", () => pm.expect(pm.response.json().message).to.include(\"already exists\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "categories"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Snacks\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "2.6 [Validation] Category that does not exist",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"404 Not Found\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Standard JSON format (success: false)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Error message mentions: Category not found\", () => pm.expect(pm.response.json().message).to.include(\"Category not found\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories/000000000000000000000000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "categories",
+                "000000000000000000000000"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Suppliers",
+      "item": [
+        {
+          "name": "3.1 Get all suppliers (saves supplier ids)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "const list = pm.response.json().data || [];",
+                  "const threads = list.find((s) => s.name === \"Bulldog Threads\");",
+                  "const paper = list.find((s) => s.name === \"Campus Paper Co.\");",
+                  "pm.test(\"Starter suppliers are listed\", () => { pm.expect(threads).to.be.an(\"object\"); pm.expect(paper).to.be.an(\"object\"); });",
+                  "if (threads) pm.collectionVariables.set(\"threadsId\", threads._id);",
+                  "if (paper) pm.collectionVariables.set(\"paperId\", paper._id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/suppliers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "suppliers"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "3.2 Create supplier Snack Hub Trading",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"201 Created\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "if (pm.response.code === 201) pm.collectionVariables.set(\"supplierId\", pm.response.json().data._id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/suppliers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "suppliers"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Snack Hub Trading\",\n  \"email\": \"orders@snackhub.example\",\n  \"phone\": \"0921 555 0105\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "3.3 Get supplier by id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Supplier is Snack Hub Trading\", () => { pm.expect(pm.response.json().data.name).to.eql(\"Snack Hub Trading\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/suppliers/{{supplierId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "suppliers",
+                "{{supplierId}}"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "3.4 Update supplier",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Phone is updated\", () => { pm.expect(pm.response.json().data.phone).to.eql(\"0921 555 0199\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/suppliers/{{supplierId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "suppliers",
+                "{{supplierId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"0921 555 0199\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "3.5 [Validation] Invalid supplier email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"400 Bad Request\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Standard JSON format (success: false)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Error message mentions: Please enter a valid email address\", () => pm.expect(pm.response.json().message).to.include(\"Please enter a valid email address\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/suppliers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "suppliers"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bad Email Supplier\",\n  \"email\": \"not-an-email\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "3.6 [Validation] Duplicate supplier name",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"409 Conflict\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Standard JSON format (success: false)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Error message mentions: already exists\", () => pm.expect(pm.response.json().message).to.include(\"already exists\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/suppliers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "suppliers"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Snack Hub Trading\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Products (CRUD)",
+      "item": [
+        {
+          "name": "4.1 Create product Campus Trail Mix",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"201 Created\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Category and supplier are populated\", () => { const d = pm.response.json().data; pm.expect(d.category.name).to.eql(\"Snacks\"); pm.expect(d.supplier.name).to.eql(\"Snack Hub Trading\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"campus-trail-mix\",\n  \"title\": \"Campus Trail Mix\",\n  \"category\": \"{{categoryId}}\",\n  \"supplier\": \"{{supplierId}}\",\n  \"price\": 85,\n  \"stock\": \"In stock\",\n  \"content\": [\n    \"A mix of nuts, raisins, and chocolate bits for quick energy between classes.\",\n    \"Comes in a resealable 150 g pouch that fits in any bag.\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "4.2 Get product by name",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Product is Campus Trail Mix\", () => { pm.expect(pm.response.json().data.title).to.eql(\"Campus Trail Mix\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/campus-trail-mix",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products",
+                "campus-trail-mix"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "4.3 Update product price and stock",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Price and stock are updated\", () => { const d = pm.response.json().data; pm.expect(d.price).to.eql(95); pm.expect(d.stock).to.eql(\"Low stock\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/campus-trail-mix",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products",
+                "campus-trail-mix"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 95,\n  \"stock\": \"Low stock\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "4.4 Assign supplier to NU Uniform Polo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Supplier is Bulldog Threads\", () => { pm.expect(pm.response.json().data.supplier.name).to.eql(\"Bulldog Threads\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/nu-uniform-polo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products",
+                "nu-uniform-polo"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"supplier\": \"{{threadsId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "4.5 Assign supplier to Web Programming Guide",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Supplier is Campus Paper Co.\", () => { pm.expect(pm.response.json().data.supplier.name).to.eql(\"Campus Paper Co.\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/web-programming-guide",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products",
+                "web-programming-guide"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"supplier\": \"{{paperId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "4.6 Assign supplier to Bulldogs Jersey",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Supplier is Bulldog Threads\", () => { pm.expect(pm.response.json().data.supplier.name).to.eql(\"Bulldog Threads\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/bulldogs-jersey",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products",
+                "bulldogs-jersey"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"supplier\": \"{{threadsId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "4.7 [Validation] Product without a title",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"400 Bad Request\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Standard JSON format (success: false)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Error message mentions: Product title is required\", () => pm.expect(pm.response.json().message).to.include(\"Product title is required\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"no-title-item\",\n  \"category\": \"{{categoryId}}\",\n  \"price\": 50\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "4.8 [Validation] Duplicate product name",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"409 Conflict\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Standard JSON format (success: false)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Error message mentions: already exists\", () => pm.expect(pm.response.json().message).to.include(\"already exists\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"campus-trail-mix\",\n  \"title\": \"Campus Trail Mix\",\n  \"category\": \"{{categoryId}}\",\n  \"supplier\": \"{{supplierId}}\",\n  \"price\": 85,\n  \"stock\": \"In stock\",\n  \"content\": [\n    \"A mix of nuts, raisins, and chocolate bits for quick energy between classes.\",\n    \"Comes in a resealable 150 g pouch that fits in any bag.\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "4.9 [Validation] Supplier that does not exist",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"400 Bad Request\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Standard JSON format (success: false)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Error message mentions: Supplier not found\", () => pm.expect(pm.response.json().message).to.include(\"Supplier not found\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"ghost-supplier-item\",\n  \"title\": \"Ghost Supplier Item\",\n  \"category\": \"{{categoryId}}\",\n  \"supplier\": \"000000000000000000000000\",\n  \"price\": 50\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "4.10 [Validation] Create product without a token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"401 Unauthorized\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"Standard JSON format (success: false)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Error message mentions: No token provided\", () => pm.expect(pm.response.json().message).to.include(\"No token provided\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"campus-trail-mix\",\n  \"title\": \"Campus Trail Mix\",\n  \"category\": \"{{categoryId}}\",\n  \"supplier\": \"{{supplierId}}\",\n  \"price\": 85,\n  \"stock\": \"In stock\",\n  \"content\": [\n    \"A mix of nuts, raisins, and chocolate bits for quick energy between classes.\",\n    \"Comes in a resealable 150 g pouch that fits in any bag.\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "4.11 [Validation] Product that does not exist",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"404 Not Found\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Standard JSON format (success: false)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Error message mentions: Product not found\", () => pm.expect(pm.response.json().message).to.include(\"Product not found\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/no-such-product",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products",
+                "no-such-product"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Pagination, Filtering, Sorting",
+      "item": [
+        {
+          "name": "5.1 Pagination - page 1, 5 per page",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Returns page 1 with up to 5 products\", () => { const b = pm.response.json(); pm.expect(b.page).to.eql(1); pm.expect(b.limit).to.eql(5); pm.expect(b.count).to.eql(Math.min(5, b.total)); pm.expect(b.totalPages).to.eql(Math.ceil(b.total / 5)); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products?page=1&limit=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "5.2 Pagination - page 3, 5 per page",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Returns the remaining products on page 3\", () => { const b = pm.response.json(); pm.expect(b.page).to.eql(3); pm.expect(b.count).to.eql(Math.max(0, Math.min(5, b.total - 10))); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products?page=3&limit=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "3"
+                },
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "5.3 Filtering by category",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Only Uniforms products are returned\", () => { const d = pm.response.json().data; pm.expect(d.length).to.be.above(0); d.forEach((p) => pm.expect(p.category.name).to.eql(\"Uniforms\")); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products?category=Uniforms",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "Uniforms"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "5.4 Sorting by price (lowest first)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Prices go up\", () => { const prices = pm.response.json().data.map((p) => p.price); pm.expect(prices).to.eql([...prices].sort((a, b) => a - b)); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products?sort=price&limit=100",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "price"
+                },
+                {
+                  "key": "limit",
+                  "value": "100"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "5.5 Sorting by price (highest first)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Prices go down\", () => { const prices = pm.response.json().data.map((p) => p.price); pm.expect(prices).to.eql([...prices].sort((a, b) => b - a)); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products?sort=-price&limit=100",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "-price"
+                },
+                {
+                  "key": "limit",
+                  "value": "100"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "5.6 [Validation] Invalid page number",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"400 Bad Request\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Standard JSON format (success: false)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Error message mentions: page must be a whole number\", () => pm.expect(pm.response.json().message).to.include(\"page must be a whole number\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products?page=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "5.7 [Validation] Invalid sort field",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"400 Bad Request\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Standard JSON format (success: false)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Error message mentions: Cannot sort by\", () => pm.expect(pm.response.json().message).to.include(\"Cannot sort by\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products?sort=color",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "color"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Version 1 Enhancements",
+      "item": [
+        {
+          "name": "6.1 Multiple filters - category and supplier",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Only Uniforms products from Bulldog Threads\", () => { const d = pm.response.json().data; pm.expect(d.map((p) => p.name)).to.include(\"nu-uniform-polo\"); d.forEach((p) => { pm.expect(p.category.name).to.eql(\"Uniforms\"); pm.expect(p.supplier.name).to.eql(\"Bulldog Threads\"); }); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products?category=Uniforms&supplier=Bulldog Threads",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "Uniforms"
+                },
+                {
+                  "key": "supplier",
+                  "value": "Bulldog Threads"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "6.2 Multiple filters - supplier and price range",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Bulldog Threads products priced 700 or more\", () => { const d = pm.response.json().data; pm.expect(d.map((p) => p.name)).to.include.members([\"hoodie-jacket\", \"bulldogs-jersey\"]); d.forEach((p) => { pm.expect(p.supplier.name).to.eql(\"Bulldog Threads\"); pm.expect(p.price).to.be.at.least(700); }); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products?supplier=Bulldog Threads&minPrice=700",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "supplier",
+                  "value": "Bulldog Threads"
+                },
+                {
+                  "key": "minPrice",
+                  "value": "700"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "6.3 Keyword search (saves hoodieId)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "const hoodie = (pm.response.json().data || []).find((p) => p.name === \"hoodie-jacket\");",
+                  "pm.test(\"Hoodie Jacket is found\", () => { pm.expect(hoodie).to.be.an(\"object\"); });",
+                  "if (hoodie) pm.collectionVariables.set(\"hoodieId\", hoodie._id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products?search=jacket",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "jacket"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "6.4 Pagination + filtering + sorting + search together",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Hoodie Jacket on page 1\", () => { const b = pm.response.json(); pm.expect(b.page).to.eql(1); pm.expect(b.limit).to.eql(5); pm.expect(b.data.map((p) => p.name)).to.eql([\"hoodie-jacket\"]); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products?page=1&limit=5&category=Apparel&sort=price&search=jacket",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "5"
+                },
+                {
+                  "key": "category",
+                  "value": "Apparel"
+                },
+                {
+                  "key": "sort",
+                  "value": "price"
+                },
+                {
+                  "key": "search",
+                  "value": "jacket"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "6.5 All features together (2 per page, highest price first)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"First page of Bulldog Threads products, highest price first\", () => { const b = pm.response.json(); pm.expect(b.count).to.eql(2); pm.expect(b.total).to.eql(3); pm.expect(b.totalPages).to.eql(2); pm.expect(b.data.map((p) => p.name)).to.eql([\"hoodie-jacket\", \"bulldogs-jersey\"]); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products?page=1&limit=2&supplier=Bulldog Threads&sort=-price",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "2"
+                },
+                {
+                  "key": "supplier",
+                  "value": "Bulldog Threads"
+                },
+                {
+                  "key": "sort",
+                  "value": "-price"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "6.6 [Validation] Unversioned route is not available",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"404 Not Found\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Standard JSON format (success: false)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Error message mentions: not found\", () => pm.expect(pm.response.json().message).to.include(\"not found\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Carts, Orders, Reviews",
+      "item": [
+        {
+          "name": "7.1 Create Carlo's cart",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"201 Created\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/carts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "carts"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": \"{{userId}}\",\n  \"items\": [\n    {\n      \"product\": \"{{hoodieId}}\",\n      \"quantity\": 1\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "7.2 Get Carlo's cart",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"User and product are populated\", () => { const c = pm.response.json().data[0]; pm.expect(c.user.email).to.eql(\"carlo.mendoza@nu.edu.ph\"); pm.expect(c.items[0].product.title).to.eql(\"Hoodie Jacket\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/carts?user={{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "carts"
+              ],
+              "query": [
+                {
+                  "key": "user",
+                  "value": "{{userId}}"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "7.3 [Validation] Second cart for Carlo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"409 Conflict\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Standard JSON format (success: false)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Error message mentions: This user already has a cart\", () => pm.expect(pm.response.json().message).to.include(\"This user already has a cart\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/carts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "carts"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": \"{{userId}}\",\n  \"items\": [\n    {\n      \"product\": \"{{hoodieId}}\",\n      \"quantity\": 2\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "7.4 Carlo places an order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"201 Created\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Total is 1199\", () => { pm.expect(pm.response.json().data.totalAmount).to.eql(1199); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": \"{{userId}}\",\n  \"items\": [\n    {\n      \"product\": \"{{hoodieId}}\",\n      \"quantity\": 1\n    }\n  ],\n  \"shippingAddress\": {\n    \"fullName\": \"Carlo Mendoza\",\n    \"phone\": \"09451234567\",\n    \"street\": \"88 España Blvd., Sampaloc\",\n    \"city\": \"Manila\",\n    \"postalCode\": \"1008\"\n  },\n  \"paymentMethod\": \"GCash\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "7.5 Get pending orders",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"All orders are Pending\", () => { const d = pm.response.json().data; pm.expect(d.length).to.be.above(0); d.forEach((o) => pm.expect(o.status).to.eql(\"Pending\")); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders?status=Pending",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "Pending"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "7.6 Carlo reviews the Hoodie Jacket",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"201 Created\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reviews",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reviews"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product\": \"{{hoodieId}}\",\n  \"user\": \"{{userId}}\",\n  \"rating\": 5,\n  \"comment\": \"Warm, soft, and the fit is just right.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "7.7 Get reviews of the Hoodie Jacket",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Carlo's review is listed\", () => { pm.expect(pm.response.json().data.map((r) => r.user.firstName)).to.include(\"Carlo\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reviews?product={{hoodieId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reviews"
+              ],
+              "query": [
+                {
+                  "key": "product",
+                  "value": "{{hoodieId}}"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "7.8 [Validation] Carlo reviews the Hoodie Jacket again",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"409 Conflict\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Standard JSON format (success: false)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Error message mentions: This user already reviewed this product\", () => pm.expect(pm.response.json().message).to.include(\"This user already reviewed this product\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reviews",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reviews"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product\": \"{{hoodieId}}\",\n  \"user\": \"{{userId}}\",\n  \"rating\": 4,\n  \"comment\": \"Posting a second review.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Delete",
+      "item": [
+        {
+          "name": "8.1 [Validation] Delete a category that still has products",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"409 Conflict\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Standard JSON format (success: false)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Error message mentions: still has products\", () => pm.expect(pm.response.json().message).to.include(\"still has products\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories/{{categoryId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "categories",
+                "{{categoryId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "8.2 [Validation] Delete a supplier that still supplies products",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"409 Conflict\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Standard JSON format (success: false)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Error message mentions: still supplies products\", () => pm.expect(pm.response.json().message).to.include(\"still supplies products\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/suppliers/{{threadsId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "suppliers",
+                "{{threadsId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "8.3 Delete product Campus Trail Mix",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/campus-trail-mix",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products",
+                "campus-trail-mix"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "8.4 [Validation] Deleted product is gone",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"404 Not Found\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Standard JSON format (success: false)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Error message mentions: Product not found\", () => pm.expect(pm.response.json().message).to.include(\"Product not found\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/campus-trail-mix",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products",
+                "campus-trail-mix"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "8.5 Delete category Snacks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories/{{categoryId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "categories",
+                "{{categoryId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "8.6 Delete supplier Snack Hub Trading",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Standard JSON format (success: true)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.message).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/suppliers/{{supplierId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "suppliers",
+                "{{supplierId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "8.7 [Validation] Deleted category is gone",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"404 Not Found\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Standard JSON format (success: false)\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.message).to.be.a(\"string\"); });",
+                  "pm.test(\"Error message mentions: Category not found\", () => pm.expect(pm.response.json().message).to.include(\"Category not found\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories/{{categoryId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "categories",
+                "{{categoryId}}"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "categoryId",
+      "value": ""
+    },
+    {
+      "key": "supplierId",
+      "value": ""
+    },
+    {
+      "key": "threadsId",
+      "value": ""
+    },
+    {
+      "key": "paperId",
+      "value": ""
+    },
+    {
+      "key": "hoodieId",
+      "value": ""
+    }
+  ]
+}
