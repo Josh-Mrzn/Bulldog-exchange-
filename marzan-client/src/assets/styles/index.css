@@ -5,23 +5,9 @@
   --color-nu-ink: #131943;
   --color-nu-gold: #f5c400;
   --color-nu-cream: #f8f6f0;
-
-  --font-display: "Fraunces", Georgia, serif;
-  --font-body: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-
-  --animate-float: float 6s ease-in-out infinite;
-
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-14px); }
-  }
 }
 
 @layer base {
-  html {
-    scroll-behavior: smooth;
-  }
-
   body {
     @apply bg-white text-slate-900 antialiased;
   }
