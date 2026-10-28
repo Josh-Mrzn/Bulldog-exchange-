@@ -5,10 +5,7 @@ import Icon from '../Icon';
 import { icons } from '../data';
 import { gsap, prefersReducedMotion, useGSAP } from '../gsap';
 
-// Parallax speed for each floating thumbnail; bigger moves farther while scrolling.
-const thumbSpeeds = [1.4, -1, 0.8, -1.6];
-
-const Cta = ({ products, signInPath, signUpPath }) => {
+const Cta = ({ signInPath, signUpPath }) => {
   const rootRef = useRef(null);
 
   useGSAP(() => {
@@ -19,15 +16,6 @@ const Cta = ({ products, signInPath, signUpPath }) => {
       { scale: 0.86, opacity: 0.4 },
       { scale: 1, opacity: 1, ease: 'none', scrollTrigger: { trigger: '.bx-cta__card', start: 'top bottom', end: 'top 40%', scrub: 1 } },
     );
-
-    gsap.utils.toArray('.bx-thumb', rootRef.current).forEach((thumb, index) => {
-      const speed = thumbSpeeds[index % thumbSpeeds.length];
-      gsap.fromTo(
-        thumb,
-        { y: speed * 70 },
-        { y: speed * -70, ease: 'none', scrollTrigger: { trigger: rootRef.current, start: 'top bottom', end: 'bottom top', scrub: 1 } },
-      );
-    });
 
     gsap.from('.bx-cta__logo', {
       y: -80,
@@ -41,14 +29,6 @@ const Cta = ({ products, signInPath, signUpPath }) => {
   return (
     <section ref={rootRef} className="bx-cta">
       <div className="bx-container bx-cta__wrap">
-        {products.slice(0, 4).map((product, index) => (
-          <div key={index} className={`bx-thumb bx-thumb--${index + 1}`} aria-hidden="true">
-            <span className="bx-thumb__inner">
-              <img src={product.image} alt="" />
-            </span>
-          </div>
-        ))}
-
         <div className="bx-cta__card">
           <div className="bx-floor bx-floor--soft" aria-hidden="true">
             <div className="bx-floor__grid" />

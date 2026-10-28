@@ -63,7 +63,7 @@ const LandingPage = ({ products, signInPath = '/auth/signin', signUpPath = '/aut
         <Spin360 />
         <HowToShop signUpPath={signUpPath} />
         <Shelves products={items} shopPath={shopPath} />
-        <Cta products={items} signInPath={signInPath} signUpPath={signUpPath} />
+        <Cta signInPath={signInPath} signUpPath={signUpPath} />
       </main>
       <Footer />
     </div>
