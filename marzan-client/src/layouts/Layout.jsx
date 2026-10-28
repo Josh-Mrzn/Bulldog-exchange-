@@ -1,12 +1,14 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import NavBar from '../components/NavBar';
 import Footer from '../components/Footer';
+import LandingPage from '../pages/LandingPages/LandingPage';
 import { getSession } from '../lib/api';
 import { CartProvider } from '../context/CartContext';
 
-// Every storefront page requires a signed-in user; anyone else starts at the log in page.
+// Guests see the public landing page at "/"; every other storefront page requires a signed-in user.
 const Layout = () => {
-  if (!getSession()?.user) return <Navigate to="/auth/signin" replace />;
+  const { pathname } = useLocation();
+  if (!getSession()?.user) return pathname === '/' ? <LandingPage /> : <Navigate to="/auth/signin" replace />;
 
   return (
     <CartProvider>
