@@ -5,10 +5,7 @@ import Icon from '../Icon';
 import { icons } from '../data';
 import { gsap, prefersReducedMotion, useGSAP } from '../gsap';
 
-// How far each floating tile drifts with the mouse, relative to the logo.
-const tileDepths = [26, -18, 14, -24];
-
-const Hero = ({ products, shopPath, signUpPath }) => {
+const Hero = ({ shopPath, signUpPath }) => {
   const rootRef = useRef(null);
 
   useGSAP(() => {
@@ -19,8 +16,7 @@ const Hero = ({ products, shopPath, signUpPath }) => {
       .from('.bx-hero__logo-wrap', { scale: 0.6, rotateY: -40, opacity: 0, transformPerspective: 900, duration: 1.4 }, 0.1)
       .from('.bx-line__in', { yPercent: 110, duration: 1, stagger: 0.12 }, 0.2)
       .from(['.bx-pill', '.bx-hero__lead', '.bx-actions'], { y: 24, opacity: 0, filter: 'blur(8px)', duration: 0.8, stagger: 0.12 }, 0.45)
-      .fromTo('.bx-underline', { '--u': 0 }, { '--u': 1, duration: 0.8, ease: 'power2.inOut' }, 0.9)
-      .from('.bx-tile', { scale: 0, opacity: 0, duration: 0.7, stagger: 0.09, ease: 'back.out(2.2)' }, 0.9);
+      .fromTo('.bx-underline', { '--u': 0 }, { '--u': 1, duration: 0.8, ease: 'power2.inOut' }, 0.9);
 
     gsap.timeline({
       scrollTrigger: { trigger: rootRef.current, start: 'top top', end: 'bottom top', scrub: 1 },
@@ -29,28 +25,19 @@ const Hero = ({ products, shopPath, signUpPath }) => {
       .to('.bx-hero__visual', { y: 140, scale: 0.82, rotate: -6, ease: 'none' }, 0)
       .to('.bx-floor', { scaleY: 0.3, opacity: 0, ease: 'none' }, 0);
 
-    // Mouse tilt and tile parallax: desktop pointers only.
+    // Mouse tilt: desktop pointers only.
     const mm = gsap.matchMedia();
     mm.add('(min-width: 821px) and (hover: hover) and (pointer: fine)', () => {
       const tilt = rootRef.current.querySelector('.bx-hero__tilt');
       gsap.set(tilt, { transformPerspective: 900 });
       const rotX = gsap.quickTo(tilt, 'rotateX', { duration: 0.8, ease: 'power3.out' });
       const rotY = gsap.quickTo(tilt, 'rotateY', { duration: 0.8, ease: 'power3.out' });
-      const tiles = gsap.utils.toArray('.bx-tile', rootRef.current).map((tile, index) => ({
-        x: gsap.quickTo(tile, 'x', { duration: 1, ease: 'power3.out' }),
-        y: gsap.quickTo(tile, 'y', { duration: 1, ease: 'power3.out' }),
-        depth: tileDepths[index % tileDepths.length],
-      }));
 
       const onMove = (event) => {
         const nx = event.clientX / window.innerWidth - 0.5;
         const ny = event.clientY / window.innerHeight - 0.5;
         rotY(nx * 36);
         rotX(-ny * 36);
-        tiles.forEach((tile) => {
-          tile.x(nx * tile.depth);
-          tile.y(ny * tile.depth);
-        });
       };
       window.addEventListener('pointermove', onMove);
       return () => window.removeEventListener('pointermove', onMove);
@@ -104,15 +91,6 @@ const Hero = ({ products, shopPath, signUpPath }) => {
             </div>
           </div>
           <div className="bx-hero__shadow" />
-
-          {/* Keyed by slot so the animated tiles stay put when real products replace the samples. */}
-          {products.slice(0, 4).map((product, index) => (
-            <div key={index} className={`bx-tile bx-tile--${index + 1}`}>
-              <div className="bx-tile__glass">
-                <img src={product.image} alt={product.name} />
-              </div>
-            </div>
-          ))}
         </div>
       </div>
     </section>

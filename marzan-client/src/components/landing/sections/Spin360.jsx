@@ -1,192 +1,214 @@
-import { useEffect, useRef } from 'react';
-import * as THREE from 'three';
-import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { buildTumbler, loadTumblerFonts } from './tumblerModel';
+import { useRef } from 'react';
+import tumbler from '../../../assets/img/bulldogs-tumbler.png';
+import lanyard from '../../../assets/img/nu-lanyard.png';
+import tshirt from '../../../assets/img/nu-tshirt.png';
+import hoodie from '../../../assets/img/nu-hoodie.png';
+import { createMorph } from './particleMorph';
 import { gsap, prefersReducedMotion, useGSAP } from '../gsap';
 
-const callouts = [
-  { label: 'Front', title: 'The Bulldogs script', text: 'Gold lettering across the front, framed by gold and white stripes.' },
-  { label: 'Side', title: 'NU on both sides', text: 'The NU letters sit on each side, so it reads from any angle.' },
-  { label: 'Back', title: 'Go Bulldogs!', text: 'National University and the school cheer wrap around the back.' },
-  { label: 'In store', title: 'Ready at the campus store', text: 'Sign in to see the price and stock before you add it to your cart.' },
+// One product per line. `edge` colours the thin sides seen while it turns.
+const products = [
+  {
+    label: 'Tumbler',
+    image: tumbler,
+    title: 'Bulldogs tumbler',
+    text: 'A navy tumbler with the Bulldogs script and the mascot on the front.',
+    edge: '#16296c',
+  },
+  {
+    label: 'Lanyard',
+    image: lanyard,
+    title: 'Bulldogs lanyard',
+    text: 'Navy and gold, with the Bulldog, the NU mark and a detachable buckle.',
+    edge: '#10163a',
+  },
+  {
+    label: 'T-shirt',
+    image: tshirt,
+    title: 'National University tee',
+    text: 'A white tee with the varsity National University arch and the NU mark.',
+    edge: '#c8c8c4',
+  },
+  {
+    label: 'Hoodie',
+    image: hoodie,
+    title: 'NU zip hoodie',
+    text: 'A navy zip-up hoodie with the NU patch on the chest and front pockets.',
+    edge: '#10142c',
+  },
 ];
 
+const COUNT = products.length;
 const RING = 2 * Math.PI * 52;
+const MORPH = 0.34; // share of the scroll, centred on each hand-over, spent turning one product into the next
+const DEPTH = 10; // how thick each product looks while it turns, in pixels
+const LAYERS = 6;
+const PHOTO_PAD = 6;
+const clamp01 = gsap.utils.clamp(0, 1);
+const pad = (value) => String(value).padStart(2, '0');
+
+// The stretch of scroll (in product units) where product `index` is fully on show and spinning.
+const showWindow = (index) => [index === 0 ? 0 : index + MORPH / 2, index === COUNT - 1 ? COUNT : index + 1 - MORPH / 2];
 
 const Spin360 = () => {
   const rootRef = useRef(null);
-  const stageRef = useRef(null);
   const ringRef = useRef(null);
   const degreeRef = useRef(null);
-  // Shared between the scroll trigger and the render loop without re-rendering React.
-  // drag/pitch: how far the mouse has turned it; flingX/flingY: the spin it keeps after a quick release.
-  const spin = useRef({ progress: 0, drag: 0, pitch: 0, flingX: 0, flingY: 0, dragging: false, angle: 0, tilt: 0 });
 
   useGSAP(() => {
     const root = rootRef.current;
+    const stage = root.querySelector('.bx-showcase');
+    const cards = gsap.utils.toArray('.bx-pcard', root);
+    const flips = cards.map((card) => card.querySelector('.bx-pcard__flip'));
     const calloutEls = root.querySelectorAll('.bx-callout');
+    const labelEls = root.querySelectorAll('.bx-dash__label');
     const dashEls = root.querySelectorAll('.bx-dash__fill');
+    let active = 0;
+
+    // Mouse spin and flip on top of the scroll turn; a quick release keeps it spinning, then it settles facing front.
+    const turn = { yaw: 0, pitch: 0, vx: 0, vy: 0, dragging: false };
+    const settle = (angle) => angle + (Math.round(angle / 360) * 360 - angle) * 0.06;
 
     const update = (progress) => {
-      spin.current.progress = progress;
-      degreeRef.current.textContent = `${Math.round(progress * 360)}°`;
-      ringRef.current.style.strokeDashoffset = RING * (1 - progress);
-      const active = Math.min(3, Math.floor(progress * 4));
-      calloutEls.forEach((el, index) => el.classList.toggle('is-active', index === active));
+      const position = progress * COUNT;
+      const current = Math.min(COUNT - 1, Math.floor(position));
+      if (current !== active) {
+        gsap.set(flips[active], { rotateY: 0, rotateX: 0 });
+        Object.assign(turn, { yaw: 0, pitch: 0, vx: 0, vy: 0 });
+        active = current;
+      }
+      const [from, to] = showWindow(current);
+      const spun = clamp01((position - from) / (to - from));
+      degreeRef.current.textContent = `${Math.round(spun * 360)}°`;
+      ringRef.current.style.strokeDashoffset = RING * (1 - spun);
+      calloutEls.forEach((el, index) => el.classList.toggle('is-active', index === current));
+      labelEls.forEach((el, index) => el.classList.toggle('is-active', index === current));
       dashEls.forEach((el, index) => {
-        el.style.transform = `scaleX(${gsap.utils.clamp(0, 1, progress * 4 - index)})`;
+        el.style.transform = `scaleX(${clamp01(position - index)})`;
       });
     };
 
     if (prefersReducedMotion()) {
       root.classList.add('is-static');
-      spin.current.angle = Math.PI * 2;
       update(1);
-      return;
+      return undefined;
     }
 
-    update(0);
-    gsap
-      .timeline({
-        scrollTrigger: {
-          trigger: root,
-          start: 'top top',
-          end: '+=300%',
-          pin: true,
-          scrub: 1,
-          onUpdate: (self) => update(self.progress),
-        },
-      })
-      .fromTo('.bx-spin__stage', { scale: 0.85 }, { scale: 1.05, ease: 'none', duration: 0.5 }, 0)
-      .to('.bx-spin__stage', { scale: 0.95, ease: 'none', duration: 0.5 }, 0.5);
-  }, { scope: rootRef });
-
-  useEffect(() => {
-    const host = stageRef.current;
-    const state = spin.current;
-    let disposed = false;
-    let frame = 0;
-    let tumbler = null;
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    host.appendChild(renderer.domElement);
-
-    const scene = new THREE.Scene();
-    const pmrem = new THREE.PMREMGenerator(renderer);
-    const room = new RoomEnvironment();
-    const environment = pmrem.fromScene(room, 0.04).texture;
-    scene.environment = environment;
-
-    const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
-    camera.position.set(0, 0.6, 11);
-    camera.lookAt(0, 0, 0);
-
-    const key = new THREE.DirectionalLight(0xffffff, 1.6);
-    key.position.set(4, 5, 6);
-    const rim = new THREE.DirectionalLight(0xf5c400, 1.6);
-    rim.position.set(-5, 2, -4);
-    const fill = new THREE.DirectionalLight(0x4b5bd6, 1);
-    fill.position.set(-6, -1, 4);
-    scene.add(new THREE.AmbientLight(0xffffff, 0.45), key, rim, fill);
-
-    loadTumblerFonts()
-      .catch(() => {})
-      .then(() => {
-        if (disposed) return;
-        tumbler = buildTumbler(renderer.capabilities.getMaxAnisotropy());
-        scene.add(tumbler.group);
-      });
-
-    const resize = () => {
-      const { clientWidth: width, clientHeight: height } = host;
-      if (!width || !height) return;
-      renderer.setSize(width, height);
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
+    // Particle canvas for the hand-overs, matched to where the photos sit on screen.
+    const canvas = root.querySelector('.bx-showcase__particles');
+    const morph = createMorph(canvas);
+    const images = products.map((product) => {
+      const image = new Image();
+      image.src = product.image;
+      return image;
+    });
+    const photoBox = () => {
+      const width = cards[0].offsetWidth;
+      const height = cards[0].offsetHeight;
+      return {
+        x: stage.clientWidth / 2 - width / 2 + PHOTO_PAD,
+        y: stage.clientHeight * 0.46 - height / 2 + PHOTO_PAD,
+        width: width - PHOTO_PAD * 2,
+        height: height - PHOTO_PAD * 2,
+      };
     };
-    const resizeObserver = new ResizeObserver(resize);
-    resizeObserver.observe(host);
+    const resizeObserver = new ResizeObserver(() => morph.resize(stage.clientWidth, stage.clientHeight));
+    resizeObserver.observe(stage);
 
-    // Scroll and the mouse set the target turn; the model eases toward it every frame.
-    const FULL_TURN = Math.PI * 2;
-    const tick = () => {
-      frame = requestAnimationFrame(tick);
-      if (!state.dragging) {
-        state.drag += state.flingX;
-        state.pitch += state.flingY;
-        state.flingX *= 0.95;
-        state.flingY *= 0.95;
-        // Once the flip slows down, settle back upright on the nearest full turn.
-        if (Math.abs(state.flingY) < 0.002) {
-          state.pitch += (Math.round(state.pitch / FULL_TURN) * FULL_TURN - state.pitch) * 0.05;
+    // GSAP owns the centring (xPercent/yPercent -50); a CSS translate would be folded into it.
+    gsap.set(cards, { xPercent: -50, yPercent: -50, rotateY: 0, transformPerspective: 1400 });
+    gsap.set(cards.slice(1), { autoAlpha: 0 });
+    const glow = root.querySelector('.bx-showcase__glow');
+
+    const timeline = gsap.timeline({
+      defaults: { ease: 'none' },
+      scrollTrigger: {
+        trigger: root,
+        start: 'top top',
+        end: `+=${COUNT * 100}%`,
+        pin: true,
+        scrub: 1,
+        onUpdate: (self) => update(self.progress),
+      },
+    });
+
+    cards.forEach((card, index) => {
+      // One full turn while the product is on show; it is facing front again when the hand-over starts.
+      const [from, to] = showWindow(index);
+      timeline.fromTo(card, { rotateY: 0 }, { rotateY: 360, duration: to - from - 0.04, immediateRender: false }, from + 0.02);
+
+      if (index < COUNT - 1) {
+        const start = index + 1 - MORPH / 2;
+        const handOver = { t: 0 };
+        timeline
+          .to(handOver, {
+            t: 1,
+            duration: MORPH,
+            onUpdate: () => morph.draw(index, images[index], images[index + 1], photoBox(), handOver.t),
+          }, start)
+          // The real photos hand over to the particles at the start and take back over at the end.
+          .to(card, { autoAlpha: 0, duration: MORPH * 0.14 }, start + MORPH * 0.04)
+          .to(cards[index + 1], { autoAlpha: 1, duration: MORPH * 0.14 }, start + MORPH * 0.82)
+          .fromTo(glow, { autoAlpha: 0, scale: 0.6 }, { autoAlpha: 1, scale: 1.15, duration: MORPH * 0.4, immediateRender: false }, start + MORPH * 0.1)
+          .to(glow, { autoAlpha: 0, scale: 0.6, duration: MORPH * 0.4 }, start + MORPH * 0.5);
+      }
+    });
+    update(0);
+
+    const spinLoop = () => {
+      if (!turn.dragging) {
+        turn.yaw += turn.vx;
+        turn.pitch += turn.vy;
+        turn.vx *= 0.94;
+        turn.vy *= 0.94;
+        if (Math.abs(turn.vx) < 0.05 && Math.abs(turn.vy) < 0.05) {
+          turn.yaw = settle(turn.yaw);
+          turn.pitch = settle(turn.pitch);
         }
       }
-      state.angle += (state.progress * FULL_TURN + state.drag - state.angle) * 0.08;
-      state.tilt += (Math.sin(state.progress * Math.PI) * 0.22 + state.pitch - state.tilt) * 0.08;
-      if (tumbler) {
-        tumbler.group.rotation.y = state.angle;
-        tumbler.group.rotation.x = state.tilt;
-      }
-      renderer.render(scene, camera);
+      gsap.set(flips[active], { rotateY: turn.yaw, rotateX: turn.pitch });
     };
-    const visibility = new IntersectionObserver(([entry]) => {
-      cancelAnimationFrame(frame);
-      if (entry.isIntersecting) tick();
-    });
-    visibility.observe(host);
+    gsap.ticker.add(spinLoop);
 
-    // Dragging sideways turns it, dragging up or down flips it; a quick release keeps it spinning.
-    const canFling = !prefersReducedMotion();
     let last = null;
     const onDown = (event) => {
       last = { x: event.clientX, y: event.clientY, time: performance.now() };
-      state.dragging = true;
-      state.flingX = 0;
-      state.flingY = 0;
-      host.setPointerCapture(event.pointerId);
+      Object.assign(turn, { dragging: true, vx: 0, vy: 0 });
+      stage.setPointerCapture(event.pointerId);
     };
     const onMove = (event) => {
       if (!last) return;
-      const dx = (event.clientX - last.x) * 0.012;
-      const dy = (event.clientY - last.y) * 0.012;
-      state.drag += dx;
-      state.pitch += dy;
-      state.flingX = dx;
-      state.flingY = dy;
+      const dx = (event.clientX - last.x) * 0.6;
+      const dy = -(event.clientY - last.y) * 0.6;
+      turn.yaw += dx;
+      turn.pitch += dy;
+      turn.vx = dx;
+      turn.vy = dy;
       last = { x: event.clientX, y: event.clientY, time: performance.now() };
     };
     const onUp = () => {
       // Holding still before letting go means no fling.
-      if (!canFling || !last || performance.now() - last.time > 80) {
-        state.flingX = 0;
-        state.flingY = 0;
+      if (!last || performance.now() - last.time > 80) {
+        turn.vx = 0;
+        turn.vy = 0;
       }
       last = null;
-      state.dragging = false;
+      turn.dragging = false;
     };
-    host.addEventListener('pointerdown', onDown);
-    host.addEventListener('pointermove', onMove);
-    host.addEventListener('pointerup', onUp);
-    host.addEventListener('pointercancel', onUp);
+    stage.addEventListener('pointerdown', onDown);
+    stage.addEventListener('pointermove', onMove);
+    stage.addEventListener('pointerup', onUp);
+    stage.addEventListener('pointercancel', onUp);
 
     return () => {
-      disposed = true;
-      cancelAnimationFrame(frame);
-      visibility.disconnect();
+      gsap.ticker.remove(spinLoop);
       resizeObserver.disconnect();
-      host.removeEventListener('pointerdown', onDown);
-      host.removeEventListener('pointermove', onMove);
-      host.removeEventListener('pointerup', onUp);
-      host.removeEventListener('pointercancel', onUp);
-      tumbler?.dispose();
-      environment.dispose();
-      room.dispose?.();
-      pmrem.dispose();
-      renderer.dispose();
-      renderer.domElement.remove();
+      stage.removeEventListener('pointerdown', onDown);
+      stage.removeEventListener('pointermove', onMove);
+      stage.removeEventListener('pointerup', onUp);
+      stage.removeEventListener('pointercancel', onUp);
     };
-  }, []);
+  }, { scope: rootRef });
 
   return (
     <section id="up-close" ref={rootRef} className="bx-spin">
@@ -200,7 +222,9 @@ const Spin360 = () => {
           <h2 className="bx-h2">
             Turn it around <em>before you buy</em>
           </h2>
-          <p className="bx-spin__hint">Scroll to spin the Bulldogs tumbler, or grab it and drag in any direction to flip it around.</p>
+          <p className="bx-spin__hint">
+            Scroll to spin each favorite all the way around, or grab it and drag in any direction to flip it.
+          </p>
           <div className="bx-ring">
             <svg viewBox="0 0 120 120" aria-hidden="true">
               <circle className="bx-ring__track" cx="60" cy="60" r="52" />
@@ -210,30 +234,69 @@ const Spin360 = () => {
           </div>
         </div>
 
-        <div
-          ref={stageRef}
-          className="bx-spin__stage"
-          role="img"
-          aria-label="3D model of the Bulldogs tumbler. Scroll or drag to turn it around."
-        />
+        <div className="bx-showcase">
+          <div className="bx-showcase__spot" aria-hidden="true" />
+          <div className="bx-showcase__glow" aria-hidden="true" />
+          <div className="bx-showcase__shadow" aria-hidden="true" />
+          {products.map((product) => {
+            const mask = { WebkitMaskImage: `url(${product.image})`, maskImage: `url(${product.image})` };
+            return (
+              <div key={product.label} className="bx-pcard">
+                <div className="bx-pcard__flip">
+                  {/* The photo again on the back, turned round so it reads the right way when the product faces away.
+                      Back first, then the sides, then the front, so a flat (reduced-motion) layout shows the front on top. */}
+                  <img
+                    src={product.image}
+                    alt=""
+                    draggable="false"
+                    className="bx-pcard__layer bx-pcard__photo bx-pcard__back"
+                    style={{ transform: `rotateY(180deg) translateZ(${DEPTH / 2}px)` }}
+                    aria-hidden="true"
+                  />
+                  {Array.from({ length: LAYERS }, (_, layer) => (
+                    <span
+                      key={layer}
+                      className="bx-pcard__layer bx-pcard__edge"
+                      style={{ ...mask, background: product.edge, transform: `translateZ(${DEPTH / 2 - ((layer + 1) * DEPTH) / (LAYERS + 1)}px)` }}
+                      aria-hidden="true"
+                    />
+                  ))}
+                  <img
+                    src={product.image}
+                    alt={product.title}
+                    draggable="false"
+                    className="bx-pcard__layer bx-pcard__photo"
+                    style={{ transform: `translateZ(${DEPTH / 2}px)` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+          <canvas className="bx-showcase__particles" aria-hidden="true" />
+        </div>
 
         <div className="bx-spin__details">
           <div className="bx-callouts">
-            {callouts.map((callout) => (
-              <article key={callout.label} className="bx-callout">
-                <p className="bx-callout__label">{callout.label}</p>
-                <h3>{callout.title}</h3>
-                <p>{callout.text}</p>
+            {products.map((product, index) => (
+              <article key={product.label} className="bx-callout">
+                <p className="bx-callout__label">
+                  {pad(index + 1)} · {product.label}
+                </p>
+                <h3>{product.title}</h3>
+                <p>{product.text}</p>
               </article>
             ))}
           </div>
-          <div className="bx-dashes" aria-hidden="true">
-            {callouts.map((callout) => (
-              <span key={callout.label} className="bx-dash">
-                <span className="bx-dash__fill" />
-              </span>
+          <ol className="bx-dashes" aria-hidden="true">
+            {products.map((product) => (
+              <li key={product.label}>
+                <span className="bx-dash">
+                  <span className="bx-dash__fill" />
+                </span>
+                <span className="bx-dash__label">{product.label}</span>
+              </li>
             ))}
-          </div>
+          </ol>
         </div>
       </div>
     </section>

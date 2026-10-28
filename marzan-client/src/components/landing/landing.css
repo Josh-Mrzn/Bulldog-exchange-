@@ -495,39 +495,6 @@ html.lenis body {
   filter: blur(10px);
 }
 
-.bx-landing .bx-tile {
-  position: absolute;
-  width: 84px;
-  height: 84px;
-}
-
-.bx-landing .bx-tile__glass {
-  width: 100%;
-  height: 100%;
-  padding: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.75);
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.55);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  box-shadow: 0 18px 36px -18px rgba(21, 26, 71, 0.45);
-  animation: bx-bob 5s ease-in-out infinite;
-}
-
-.bx-landing .bx-tile__glass img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.bx-landing .bx-tile--1 { top: 4%; left: -6%; }
-.bx-landing .bx-tile--2 { top: -2%; right: -4%; }
-.bx-landing .bx-tile--3 { bottom: 20%; left: -10%; }
-.bx-landing .bx-tile--4 { bottom: 12%; right: -8%; }
-.bx-landing .bx-tile--2 .bx-tile__glass { animation-duration: 6.5s; animation-delay: -2s; }
-.bx-landing .bx-tile--3 .bx-tile__glass { animation-duration: 7s; animation-delay: -1s; }
-.bx-landing .bx-tile--4 .bx-tile__glass { animation-duration: 5.6s; animation-delay: -3s; }
-
 /* ---------- Perks ---------- */
 
 .bx-landing .bx-perks {
@@ -823,28 +790,119 @@ html.lenis body {
 .bx-landing .bx-ring__label {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   font-family: var(--bx-serif);
-  font-size: 1.6rem;
+  font-size: 1.8rem;
   font-weight: 700;
+  line-height: 1;
 }
 
-.bx-landing .bx-spin__stage {
+.bx-landing .bx-ring__label small {
+  margin-top: 4px;
+  font-family: var(--bx-sans);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* Product photo cards: each one is a two-sided card that turns in 3D. */
+.bx-landing .bx-showcase {
   position: relative;
-  height: min(72svh, 640px);
+  height: min(70svh, 600px);
   cursor: grab;
   touch-action: pan-y;
+  user-select: none;
 }
 
-.bx-landing .bx-spin__stage:active {
+.bx-landing .bx-showcase:active {
   cursor: grabbing;
 }
 
-.bx-landing .bx-spin__stage canvas {
-  display: block;
+.bx-landing .bx-showcase__shadow {
+  position: absolute;
+  left: 50%;
+  bottom: 2%;
+  width: 62%;
+  height: 34px;
+  translate: -50% 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  filter: blur(18px);
+}
+
+/* Each product is its photo on both faces, with a few stacked silhouettes between them for a thin edge. */
+.bx-landing .bx-pcard {
+  position: absolute;
+  top: 46%;
+  left: 50%;
+  width: min(340px, 82%);
+  aspect-ratio: 4 / 5;
+  transform-style: preserve-3d;
+}
+
+.bx-landing .bx-pcard__flip {
+  position: relative;
   width: 100%;
   height: 100%;
+  transform-style: preserve-3d;
+}
+
+.bx-landing .bx-pcard__layer {
+  position: absolute;
+  inset: 6px;
+  width: calc(100% - 12px);
+  height: calc(100% - 12px);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  pointer-events: none;
+}
+
+.bx-landing .bx-pcard__photo {
+  object-fit: contain;
+  filter: drop-shadow(0 28px 26px rgba(0, 0, 0, 0.45));
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.bx-landing .bx-showcase__particles {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* A soft light behind the product so navy items still stand out on the navy background. */
+.bx-landing .bx-showcase__spot,
+.bx-landing .bx-showcase__glow {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.bx-landing .bx-showcase__spot {
+  width: 560px;
+  height: 560px;
+  background: radial-gradient(circle, rgba(120, 135, 255, 0.32), rgba(46, 49, 146, 0.12) 45%, transparent 68%);
+}
+
+.bx-landing .bx-showcase__glow {
+  width: 340px;
+  height: 340px;
+  background: radial-gradient(circle, rgba(245, 196, 0, 0.6), rgba(245, 196, 0, 0.15) 45%, transparent 70%);
+  opacity: 0;
+  visibility: hidden;
 }
 
 .bx-landing .bx-callouts {
@@ -887,13 +945,29 @@ html.lenis body {
 }
 
 .bx-landing .bx-dashes {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
   margin-top: 20px;
 }
 
+.bx-landing .bx-dash__label {
+  display: block;
+  margin-top: 10px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  transition: color 0.3s ease;
+}
+
+.bx-landing .bx-dash__label.is-active {
+  color: var(--bx-gold);
+}
+
 .bx-landing .bx-dash {
-  flex: 1;
+  display: block;
   height: 3px;
   overflow: hidden;
   border-radius: 3px;
@@ -923,6 +997,31 @@ html.lenis body {
   opacity: 1;
   transform: none;
   filter: none;
+}
+
+.bx-landing .bx-spin.is-static .bx-showcase {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  height: auto;
+  cursor: default;
+}
+
+.bx-landing .bx-spin.is-static .bx-showcase__shadow {
+  display: none;
+}
+
+.bx-landing .bx-spin.is-static .bx-pcard {
+  position: relative;
+  top: auto;
+  left: auto;
+  width: auto;
+}
+
+.bx-landing .bx-spin.is-static .bx-pcard__back,
+.bx-landing .bx-spin.is-static .bx-pcard__edge,
+.bx-landing .bx-spin.is-static .bx-showcase__particles {
+  display: none;
 }
 
 /* ---------- How to shop ---------- */
@@ -1310,16 +1409,6 @@ html.lenis body {
     width: min(78%, 340px);
   }
 
-  .bx-landing .bx-tile {
-    width: 64px;
-    height: 64px;
-  }
-
-  .bx-landing .bx-tile--3,
-  .bx-landing .bx-tile--4 {
-    display: none;
-  }
-
   .bx-landing .bx-statement {
     padding: 110px 0 100px;
   }
@@ -1355,12 +1444,25 @@ html.lenis body {
   }
 
   .bx-landing .bx-ring__label {
-    font-size: 1.05rem;
+    font-size: 1.15rem;
   }
 
-  .bx-landing .bx-spin__stage {
+  .bx-landing .bx-ring__label small {
+    display: none;
+  }
+
+  .bx-landing .bx-showcase {
     height: 100%;
     min-height: 260px;
+  }
+
+  .bx-landing .bx-pcard {
+    width: min(250px, 64%);
+  }
+
+  .bx-landing .bx-showcase__spot {
+    width: 360px;
+    height: 360px;
   }
 
   .bx-landing .bx-callouts {

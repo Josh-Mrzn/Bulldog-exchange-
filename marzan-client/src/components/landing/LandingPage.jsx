@@ -56,7 +56,7 @@ const LandingPage = ({ products, signInPath = '/auth/signin', signUpPath = '/aut
     <div className="bx-landing">
       <Nav signInPath={signInPath} />
       <main>
-        <Hero products={items} shopPath={shopPath} signUpPath={signUpPath} />
+        <Hero shopPath={shopPath} signUpPath={signUpPath} />
         <Perks />
         <Statement />
         <Features />
